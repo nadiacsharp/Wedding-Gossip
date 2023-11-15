@@ -562,7 +562,7 @@ class WeddingGossip():
                             self.player_states[new_gossip_talker].individual_score += new_gossip_val
                             self.group_score += new_gossip_val
                             self.player_states[index].gossip_list.append(new_gossip_val)
-                            self.players[index].get_gossip(new_gossip_val)
+                            self.players[index].get_gossip(new_gossip_val, new_gossip_talker)
 
                     elif direction == 'right':
                         self.player_states[index].direction = direction
@@ -624,7 +624,7 @@ class WeddingGossip():
                             self.player_states[new_gossip_talker].individual_score += new_gossip_val
                             self.group_score += new_gossip_val
                             self.player_states[index].gossip_list.append(new_gossip_val)
-                            self.players[index].get_gossip(new_gossip_val)
+                            self.players[index].get_gossip(new_gossip_val, new_gossip_talker)
                 
                 elif action_type == 'move':
                     random.shuffle(move_players)

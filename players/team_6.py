@@ -68,5 +68,5 @@ class Player():
     def feedback(self, feedback):
         pass
 
-    def get_gossip(self, gossip_item):
+    def get_gossip(self, gossip_item, gossip_talker):
         pass
