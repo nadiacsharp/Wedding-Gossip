@@ -80,7 +80,7 @@ class WeddingGossip():
 
         # number of turns
         self.T = int(args.turns)
-        self.turn = 0
+        self.turn = 1
 
         # time interval in ms for gui update
         self.interval = int(args.interval)
@@ -125,9 +125,12 @@ class WeddingGossip():
             f.write("Logs\n")
 
         self._game_config(self.player_groups)
-        self._render_frame()
-        self.root.mainloop()
-        self.root2.mainloop()
+        if args.gui == "True" or args.gui == "true":
+            self._render_frame()
+            self.root.mainloop()
+            self.root2.mainloop()
+        else:
+            self._play_game()
 
     def _game_config(self, players):
         total_seats = list(range(100))
@@ -143,7 +146,7 @@ class WeddingGossip():
 
         for index, player in enumerate(players):
             id = attendees[index]
-            team_num = player
+            team_num = int(player)
             table_num = assigned_seats[index] // 10
             seat_num = assigned_seats[index] % 10
             gossip = gossips[index]
@@ -215,8 +218,6 @@ class WeddingGossip():
             action = player_state.action[0]
             self.canvas.itemconfigure(self.seat_label_comps[table][seat], text="")
             self.canvas.itemconfigure(self.id_label_comps[table][seat], text="")
-            # print(id, action)
-
 
             if action == 'talk':
                 self.canvas.itemconfigure(self.seat_label_comps[table][seat], text=player_state.curr_state)
@@ -240,15 +241,11 @@ class WeddingGossip():
                 else:
                     self.canvas.itemconfigure(self.table_comps[table][seat], start=self.right_listen_angle[seat][0], extent=self.right_listen_angle[seat][1], fill=color, outline="#000000", width=5, style=tk.PIESLICE)
             elif action == 'move':
-                # self.canvas.itemconfigure(self.seat_label_comps[table][seat], text=str(player_state.id))
                 self.canvas.itemconfigure(self.id_label_comps[table][seat], text=str(id))
                 self.canvas.itemconfigure(self.turn_eyes_comp[table][seat], fill=color, outline=color)
                 self.canvas.itemconfigure(self.left_eyes_comp[table][seat], fill="#000000", outline="#000000")
                 self.canvas.itemconfigure(self.right_eyes_comp[table][seat], fill="#000000", outline="#000000")
-                # if self.check_move[id] == 1:
                 self.canvas.itemconfigure(self.table_comps[table][seat], start=self.left_listen_angle[seat][0], extent=self.left_listen_angle[seat][1], fill=color, outline="#FD1005", width=5, style="chord")
-                # else:
-                #     self.canvas.itemconfigure(self.table_comps[table][seat], start=self.left_listen_angle[seat][0], extent=self.left_listen_angle[seat][1], fill=color, outline="#000000", width=5, style="chord")
                     
             for index, player_state in enumerate(self.shuffled_player_states):
                 team_num = player_state.team_num
@@ -281,13 +278,12 @@ class WeddingGossip():
                 y = ((interval * j + 8 * self.scale) + (interval * (j + 1) + 8 * self.scale)) / 2
                 centers.append([x, y])
                 self.canvas.create_oval(interval * i + 8 * self.scale, interval * j + 16 * self.scale, interval * (i + 1) - 8 * self.scale, interval * (j + 1), outline="#683F0B", fill="#9B784B",width=5)
-                # self.canvas.create_text(interval * i + 11 * self.scale, interval * j + 19 * self.scale, anchor="nw", font=('Helvetica', 5 * self.scale, 'bold'), text=str(table))
-
-                #Load an image in the script
+                
+                # Load an image in the script
                 img= (Image.open("./icons/" + str(table) + ".png"))
 
-                #Resize the Image using resize method
-                resized_image= img.resize((140,140), Image.ANTIALIAS)
+                # Resize the Image using resize method
+                resized_image= img.resize((14 * self.scale,14 * self.scale), Image.ANTIALIAS)
                 self.icons.append(ImageTk.PhotoImage(resized_image))
 
                 self.canvas.create_image(interval * i + 8 * self.scale, interval * j + 16 * self.scale,anchor=NW,image=self.icons[table])
@@ -453,6 +449,7 @@ class WeddingGossip():
         return player_actions
 
     def _play_game(self):
+        print(self.turn)
         if self.turn > self.T:
             self.game_state = "over"
 
@@ -521,12 +518,9 @@ class WeddingGossip():
                             if lp_id != -1:
                                 if action_list[lp_id][0] == 'talk':
                                     if action_list[lp_id][1] == 'right':
-                                        # print(lp_id, action_list[lp_id])
                                         left_player_ids.append(lp_id)
                                         left_player_actions.append(action_list[lp_id])
-                        # left_player_ids = [seats[left_positions[0]][0], seats[left_positions[1]][0], seats[left_positions[2]][0]]
-                        # left_player_actions = [action_list[left_player_ids[0]], action_list[left_player_ids[1]], action_list[left_player_ids[2]]]
-
+                        
                         # highest gossip value
                         highest_gossip_val = -1
                         highest_gossip_talker = -1
@@ -585,12 +579,10 @@ class WeddingGossip():
                             rp_id = seats[pos][0]
                             if rp_id != -1:
                                 if action_list[rp_id][0] == 'talk':
-                                    if action_list[rp_id][1] == 'right':
+                                    if action_list[rp_id][1] == 'left':
                                         right_player_ids.append(rp_id)
                                         right_player_actions.append(action_list[rp_id])
-                        # right_player_ids = [seats[right_positions[0]][0], seats[right_positions[1]][0], seats[right_positions[2]][0]]
-                        # right_player_actions = [action_list[right_player_ids[0]], action_list[right_player_ids[1]], action_list[right_player_ids[2]]]
-
+                        
                         # highest gossip value
                         highest_gossip_val = -1
                         highest_gossip_talker = -1
@@ -660,6 +652,5 @@ class WeddingGossip():
             if self.game_state == "resume":
                 if self.gui:
                     self.root.after(self.interval, self._play_game)
-
                 else:
                     self._play_game()
