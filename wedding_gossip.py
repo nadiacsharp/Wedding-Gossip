@@ -38,8 +38,13 @@ class WeddingGossip():
 
         # log file
         self.log = os.path.join("logs", "log.txt")
+        self.result = os.path.join("logs", "results.txt")
+        self.attendee_logs = []
 
         with open(self.log, 'w') as f:
+            f.write("")
+
+        with open(self.result, 'w') as f:
             f.write("")
 
         self.num_instances = int(90 // len(args.teams))
@@ -421,6 +426,8 @@ class WeddingGossip():
                 # update player state
                 self.player_states[index].table_num = table_num
                 self.player_states[index].seat_num = seat_num
+
+                self.attendee_logs[index] += " Moved to Table Num: " + str(table_num) + " Seat Num: " + str(seat_num)
                 return 1
         return 0
 
@@ -449,29 +456,40 @@ class WeddingGossip():
         return player_actions
 
     def _play_game(self):
-        print(self.turn)
+        self.attendee_logs = []
         if self.turn > self.T:
             self.game_state = "over"
+            with open(self.result, 'a') as f:
+                f.write("Results\n")
+                f.write("Group Score: " + str(round(self.group_score / 90, 2)) + "\n")
+
+            for index, player_state in enumerate(self.player_states):
+                with open(self.result, 'a') as f:
+                    f.write("Attendee: " + str(player_state.id) + " Team: " + str(player_state.team_num) + " Individual Score: " + str(player_state.individual_score) + " Initial Gossip: " + str(player_state.initial_gossip) + "\n")
+
 
         if self.game_state != "over":
             action_list = []
-            feedback = [[]] * len(self.player_states)
+            feedback = [[] for _ in range(len(self.player_states))]
             move_players = []
             self.check_move = [0] * 90
 
             player_positions = self.get_player_positions()
 
             with open(self.log, 'a') as f:
-                    f.write("Turn: " + str(self.turn) + "\n")
+                f.write("Turn: " + str(self.turn) + "\n")
 
             for index, player in enumerate(self.players):
                 # get action
                 self.player_states[index].curr_state = ""
+                start_time = time.time()
                 player.observe_before_turn(player_positions)
                 action = player.get_action()
-                with open(self.log, 'a') as f:
-                    f.write("Attendee: " + str(self.player_states[index].id) + " Team: " + str(self.player_states[index].team_num) + \
-                            " Action: " + str(action) + "\n")
+                end_time = time.time()
+                self.attendee_logs.append("Attendee: " + str(index) + " Team: " + str(self.player_states[index].team_num) + \
+                                          " Current Table Num: " + str(self.player_states[index].table_num) + \
+                                          " Current Seat Num: " + str(self.player_states[index].seat_num) + \
+                                          " Action: " + str(action) + "Time Taken: " + str(end_time - start_time))
                 action_type = action[0]
                 if action_type == 'talk':
                     direction = action[1]
@@ -550,11 +568,13 @@ class WeddingGossip():
                             if highest_gossip_val == -1:
                                 # no player on the left was talking towards the right
                                 # no feedback is returned
+                                self.attendee_logs[index] += " Listened Nothing"
                                 pass
                             else:
                                 # feedback is sent to the talker who has the highest gossip value
-                                feedback[highest_gossip_talker].append("Shake Head")
+                                feedback[highest_gossip_talker].append("Shake Head " + str(index))
                                 self.player_states[index].curr_state = "S"
+                                self.attendee_logs[index] += " Shaked Head to Attendee " + str(highest_gossip_talker) + " from Team " + str(self.player_states[highest_gossip_talker].team_num)
                                 
                         else:
                             feedback[new_gossip_talker].append("Nod Head " + str(index))
@@ -563,6 +583,7 @@ class WeddingGossip():
                             self.group_score += new_gossip_val
                             self.player_states[index].gossip_list.append(new_gossip_val)
                             self.players[index].get_gossip(new_gossip_val, new_gossip_talker)
+                            self.attendee_logs[index] += " Nod Head to Attendee " + str(new_gossip_talker) + " from Team " + str(self.player_states[new_gossip_talker].team_num)
 
                     elif direction == 'right':
                         self.player_states[index].direction = direction
@@ -613,11 +634,13 @@ class WeddingGossip():
                             if highest_gossip_val == -1:
                                 # no player on the left was talking towards the right
                                 # no feedback is returned
+                                self.attendee_logs[index] += " Listened Nothing"
                                 pass
                             else:
                                 # feedback is sent to the talker who has the highest gossip value
-                                feedback[highest_gossip_talker].append("Shake")
+                                feedback[highest_gossip_talker].append("Shake Head " + str(index))
                                 self.player_states[highest_gossip_talker].curr_state = "S"
+                                self.attendee_logs[index] += " Shaked Head to Attendee " + str(highest_gossip_talker) + " from Team " + str(self.player_states[highest_gossip_talker].team_num)
                         else:
                             feedback[new_gossip_talker].append("Nod Head " + str(index))
                             self.player_states[index].curr_state = "N," + str(new_gossip_talker)
@@ -625,6 +648,7 @@ class WeddingGossip():
                             self.group_score += new_gossip_val
                             self.player_states[index].gossip_list.append(new_gossip_val)
                             self.players[index].get_gossip(new_gossip_val, new_gossip_talker)
+                            self.attendee_logs[index] += " Nod Head to Attendee " + str(new_gossip_talker) + " from Team " + str(self.player_states[new_gossip_talker].team_num)
                 
                 elif action_type == 'move':
                     random.shuffle(move_players)
@@ -639,10 +663,15 @@ class WeddingGossip():
                 action_type = action[0]
                 if action_type == 'talk':
                     self.players[index].feedback(feedback[index])
+                    self.attendee_logs[index] += "Received Feedback: " + str(feedback[index])
 
             for index, action in enumerate(action_list):
                 player_actions = self.get_player_recent_actions(index)
                 self.players[index].observe_after_turn(player_actions)
+
+            for log in self.attendee_logs:
+                with open(self.log, 'a') as f:
+                    f.write(log + "\n")
 
             if self.gui:
                 self._update_ui()

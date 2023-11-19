@@ -18,7 +18,7 @@ class Player():
         pass
 
     # At the end of a turn, players should be told what everybody at their current table (who was there at the start of the turn)
-    # did (i.e., talked/listened in what direction, or moved)
+    # did (i.e., talked/listened and in what direction)
     def observe_after_turn(self, player_actions):
         pass
 
